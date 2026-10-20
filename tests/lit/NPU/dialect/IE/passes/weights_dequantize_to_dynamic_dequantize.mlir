@@ -697,8 +697,7 @@ func.func @U2WeightsConstPrefillPatternToDynamicDequantize(%act : tensor<1x3x4xf
   // CHECK-DAG: [[WT_RAW:%.+]] = const.Declare tensor<4x2x2xui2> = dense_resource<weights_blob>
   // CHECK-DAG: [[ZP:%.+]] = const.Declare tensor<4x2x1xui2> = dense_resource<shift_blob>
 
-  // CHECK-NOT: vpux.weights_import_dyn_dequant
-  // CHECK: [[DDQ:%.+]] = IE.DynamicDequantize([[WT_RAW]], [[SCALE]], [[ZP]]) {dstElemType = f16} : tensor<4x2x2xui2>, tensor<4x2x1xf16>, tensor<4x2x1xui2> -> tensor<4x2x2xf16>
+  // CHECK: [[DDQ:%.+]] = IE.DynamicDequantize([[WT_RAW]], [[SCALE]], [[ZP]]) {dstElemType = f16, vpux.weights_import_dyn_dequant} : tensor<4x2x2xui2>, tensor<4x2x1xf16>, tensor<4x2x1xui2> -> tensor<4x2x2xf16>
   // CHECK: [[RESHAPE_1:%.+]] = IE.AffineReshape([[DDQ]])
   // CHECK: [[CONVERT:%.+]] = IE.Convert([[RESHAPE_1]]) {dstElemType = f32} : tensor<4x4xf16> -> tensor<4x4xf32>
   // CHECK: [[RESHAPE_2:%.+]] = IE.Reshape([[ACT]]) {shape_value = [3, 4]} : tensor<1x3x4xf32> -> tensor<3x4xf32>
