@@ -112,10 +112,11 @@ mlir::LogicalResult finishDynamicDequantizeRewrite(mlir::PatternRewriter& rewrit
     auto dynamicDequant =
             rewriter.create<IE::DynamicDequantizeOp>(appendLoc(loc, "ddq"), rawWeights, scaleValue, zpValue, dstType);
 
-    // Mark the op for the DynDeq -> FakeQuantize bridge pass.
-    if (wdInfo.isKVcachedPattern() || !zpElemType.isInteger(2)) {
-        dynamicDequant->setAttr(IE::WEIGHTS_IMPORT_DYN_DEQUANT_ATTR, mlir::UnitAttr::get(rewriter.getContext()));
-    }
+    // Mark the op for the DynDeq -> FakeQuantize bridge pass. 2-bit zero points are marked too outside the KV-cached
+    // (one-row) pattern: left unmarked, a multi-row (prefill) FullyConnected dequantizes them with the
+    // DynamicDequantize SHAVE kernel, which returns zeros for u2 inputs on NPU40XX / NPU50XX; marked, they take the
+    // FakeQuantize -> group unroll -> palletized LUT path of the one-row graphs (still stored as 2 bits).
+    dynamicDequant->setAttr(IE::WEIGHTS_IMPORT_DYN_DEQUANT_ATTR, mlir::UnitAttr::get(rewriter.getContext()));
 
     rewriter.replaceAllOpUsesWith(lastOp, dynamicDequant.getResult());
     wdInfo.cleanUpCurrentWdChain(rewriter);
